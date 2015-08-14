@@ -1,0 +1,9 @@
+*~
+.*.swp
+*#*
+.DS_Store
+/_vendor
+/.vendor
+/bin/hal
+/bin/victor
+/bin/local

@@ -1,0 +1,7 @@
+gom 'github.com/danryan/hal'
+gom 'github.com/brettbuddin/victor'
+gom 'github.com/kyokomi/go-docomo/docomo'
+
+group :development do
+  gom 'golang.org/x/tools/cmd/goimports'
+end
