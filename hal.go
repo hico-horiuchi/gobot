@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/danryan/hal"
@@ -9,7 +11,9 @@ import (
 	"github.com/kyokomi/go-docomo/docomo"
 )
 
-var dialogueHandler = hal.Respond(`(.+)`, func(res *hal.Response) error {
+var robot *hal.Robot
+
+func dialogueHandler(res *hal.Response) error {
 	d := docomo.NewClient(os.Getenv("DOCOMO_DIALOGUE_API_KEY"))
 	dialogue := docomo.DialogueRequest{
 		Utt: &res.Match[1],
@@ -21,19 +25,21 @@ var dialogueHandler = hal.Respond(`(.+)`, func(res *hal.Response) error {
 	}
 
 	return res.Reply(get.Utt)
-})
+}
+
+func sayHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body)
+	robot.Adapter.Send(nil, string(body))
+}
 
 func main() {
-	robot, err := hal.NewRobot()
-	if err != nil {
-		hal.Logger.Error(err)
-	}
+	robot, _ = hal.NewRobot()
 
 	robot.Handle(
-		dialogueHandler,
+		hal.Respond(`(.+)`, dialogueHandler),
 	)
+	hal.Router.HandleFunc("/say", sayHandler)
 
-	if err := robot.Run(); err != nil {
-		hal.Logger.Error(err)
-	}
+	robot.Run()
 }

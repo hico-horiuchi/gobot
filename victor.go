@@ -1,12 +1,16 @@
 package main
 
 import (
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/signal"
 
 	"github.com/brettbuddin/victor"
 	"github.com/kyokomi/go-docomo/docomo"
 )
+
+var bot victor.Robot
 
 func dialogueHandler(robot victor.Robot) {
 	robot.HandleFunc(robot.Direct("(.+)"), func(s victor.State) {
@@ -20,14 +24,23 @@ func dialogueHandler(robot victor.Robot) {
 	})
 }
 
+func sayHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body)
+	bot.Chat().Send("0", string(body))
+}
+
 func main() {
-	bot := victor.New(victor.Config{
+	bot = victor.New(victor.Config{
 		Name:        "victor",
 		ChatAdapter: "shell",
 	})
 
 	dialogueHandler(bot)
 	go bot.Run()
+
+	http.HandleFunc("/say", sayHandler)
+	go http.ListenAndServe(":9000", nil)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt)
